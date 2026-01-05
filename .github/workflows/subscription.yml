@@ -1,10 +1,10 @@
 name: Smartsheet Subscription Extract
 
 on:
-  workflow_dispatch:   # manual for now
+  workflow_dispatch:   # manual trigger for now, can later schedule
 
 permissions:
-  contents: write
+  contents: read       # no write needed if not committing files
 
 jobs:
   extract-subscription:
@@ -22,22 +22,16 @@ jobs:
       - name: Install dependencies
         run: pip install requests pandas urllib3
 
-      - name: Run subscription extractor
+      - name: Run subscription extractor and push to Smartsheet
         env:
           SMARTSHEET_COOKIE: ${{ secrets.SMARTSHEET_COOKIE }}
           SMARTSHEET_XSRF_TOKEN: ${{ secrets.SMARTSHEET_XSRF_TOKEN }}
+          SM_TOKEN: ${{ secrets.SM_TOKEN }}          # Smartsheet API token
+          SM_SHEET_ID: ${{ secrets.SM_SHEET_ID }}    # Smartsheet Sheet ID
         run: python subscription.py
 
-      - name: Upload output CSV
+      - name: Upload CSV as artifact (optional)
         uses: actions/upload-artifact@v4
         with:
           name: subscription-data
           path: assets/Subscription.csv
-
-      - name: Commit CSV output
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add assets/Subscription.csv
-          git diff --cached --quiet || git commit -m "Daily Smartsheet subscription snapshot"
-          git push
