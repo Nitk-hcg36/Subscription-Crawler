@@ -33,11 +33,19 @@ def subs():
     }
     resp = requests.get(BASE_URL, headers=HEADERS, verify=False)
     resp.raise_for_status()
-    result=resp.json()
+    result = resp.json()
     data = pd.json_normalize(result)
-    data.to_csv("assets/subscription.csv",index=False)
 
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    OUTPUT_DIR = os.path.join(BASE_DIR, "assets")
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    OUTPUT_FILE = os.path.join(OUTPUT_DIR, "subscription.csv")
+    data.to_csv(OUTPUT_FILE, index=False)
+
+    print(f"Saved to {OUTPUT_FILE}")
 subs()
+
 
 
 
