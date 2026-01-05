@@ -6,7 +6,7 @@ import smartsheet
 
 urllib3.disable_warnings()
 
-# Map your DataFrame column names to Smartsheet column titles
+# Map your DataFrame columns to Smartsheet column titles
 FIELD_MAP = {
     "usageStart": "usageStart",
     "usageEnd": "usageEnd",
@@ -25,9 +25,6 @@ FIELD_MAP = {
 }
 
 def subs():
-    # -----------------------
-    # 1. Smartsheet Admin API URL
-    # -----------------------
     BASE_URL = "https://admin.smartsheet.com/api/licensing/v1/plans/4168320/member-summary?period=RECON"
 
     HEADERS = {
@@ -47,24 +44,18 @@ def subs():
     resp.raise_for_status()
     result = resp.json()
 
-    # -----------------------
-    # 2. Flatten JSON and select only needed columns
-    # -----------------------
+    # Flatten JSON
     data = pd.json_normalize(result)
     df = data[[col for col in FIELD_MAP.keys() if col in data.columns]]
 
-    # -----------------------
-    # 3. Initialize Smartsheet SDK
-    # -----------------------
-    SM_TOKEN = os.getenv("SM_TOKEN")        # GitHub secret
-    SHEET_ID = int(os.getenv("SM_SHEET_ID"))  # GitHub secret
+    # Initialize Smartsheet SDK
+    SM_TOKEN = os.getenv("SM_TOKEN")
+    SHEET_ID = int(os.getenv("SM_SHEET_ID"))
 
     ss_client = smartsheet.Smartsheet(SM_TOKEN)
     ss_client.errors_as_exceptions(True)
 
-    # -----------------------
-    # 4. Build rows using FIELD_MAP pattern
-    # -----------------------
+    # Get column IDs dynamically
     sheet_info = ss_client.Sheets.get_sheet(SHEET_ID)
     col_map = {col.title: col.id for col in sheet_info.columns}
 
@@ -77,15 +68,19 @@ def subs():
         for df_col, sm_col_title in FIELD_MAP.items():
             col_id = col_map.get(sm_col_title)
             if not col_id:
-                continue  # Skip if column not found in sheet
-            sm_row.cells.append(ss_client.models.Cell(column_id=col_id, value=row[df_col]))
-        
+                continue
+            val = row[df_col] if row[df_col] is not None else ""
+            sm_row.cells.append(
+                ss_client.models.Cell({
+                    "column_id": col_id,
+                    "value": val
+                })
+            )
+
         if sm_row.cells:
             rows.append(sm_row)
 
-    # -----------------------
-    # 5. Push rows in batches
-    # -----------------------
+    # Push in batches
     batch_size = 200
     for i in range(0, len(rows), batch_size):
         batch = rows[i:i+batch_size]
