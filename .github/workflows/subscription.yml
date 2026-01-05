@@ -20,7 +20,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install requests pandas urllib3 smartsheet
+        run: pip install requests pandas urllib3 smartsheet-python-sdk
 
       - name: Run subscription extractor and push to Smartsheet
         env:
