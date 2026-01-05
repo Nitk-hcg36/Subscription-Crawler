@@ -30,8 +30,4 @@ jobs:
           SM_SHEET_ID: ${{ secrets.SM_SHEET_ID }}    # Smartsheet Sheet ID
         run: python subscription.py
 
-      - name: Upload CSV as artifact (optional)
-        uses: actions/upload-artifact@v4
-        with:
-          name: subscription-data
-          path: assets/Subscription.csv
+
