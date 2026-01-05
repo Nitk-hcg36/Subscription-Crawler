@@ -35,7 +35,8 @@ def subs():
     resp.raise_for_status()
     result=resp.json()
     data = pd.json_normalize(result)
-    data.to_csv("C:/Users/nitk/OneDrive - Huron Consulting Group/Nitish Workspace/Code Base/User Roles and Reports/assets/Subscription.csv",index=False)
+    data.to_csv("outputs/subscription.csv",index=False)
 
 subs()
+
 
