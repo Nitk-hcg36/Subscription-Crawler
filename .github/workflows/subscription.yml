@@ -3,6 +3,9 @@ name: Smartsheet Subscription Extract
 on:
   workflow_dispatch:   # manual for now
 
+permissions:
+  contents: write
+
 jobs:
   extract-subscription:
     runs-on: ubuntu-latest
