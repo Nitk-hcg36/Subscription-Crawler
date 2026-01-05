@@ -32,7 +32,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: subscription-data
-          path: assets/subscription.csv
+          path: assets/Subscription.csv
 
       - name: Commit CSV output
         run: |
