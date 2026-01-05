@@ -1,13 +1,16 @@
 import os
-import pandas as pd
+import time
 import requests
 import urllib3
+import pandas as pd
 import smartsheet
 
 urllib3.disable_warnings()
 
 def subs():
-    # Smartsheet Admin API URL to get subscription data
+    # -----------------------
+    # 1. Get data from Smartsheet Admin API
+    # -----------------------
     BASE_URL = "https://admin.smartsheet.com/api/licensing/v1/plans/4168320/member-summary?period=RECON"
 
     HEADERS = {
@@ -23,15 +26,14 @@ def subs():
         "x-smar-xsrf-token": os.getenv("SMARTSHEET_XSRF_TOKEN")
     }
 
-    # Fetch the data from Smartsheet Admin API
     resp = requests.get(BASE_URL, headers=HEADERS, verify=False)
     resp.raise_for_status()
     result = resp.json()
-
-    # Flatten JSON
     data = pd.json_normalize(result)
 
-    # Columns to push
+    # -----------------------
+    # 2. Filter relevant columns
+    # -----------------------
     sheet_columns = [
         "usageStart", "usageEnd", "reconStart", "reconEnd",
         "lastCalculatedDate", "currencyCode", "reconDaysRemaining",
@@ -39,42 +41,44 @@ def subs():
         "membersPurchased", "billableMembers", "skuName",
         "pendingSeatRequestsCount"
     ]
+
     df = data[[col for col in sheet_columns if col in data.columns]]
 
-    # Smartsheet setup
+    # -----------------------
+    # 3. Connect to Smartsheet
+    # -----------------------
     SM_TOKEN = os.getenv("SM_TOKEN")
     SHEET_ID = int(os.getenv("SM_SHEET_ID"))
+
     ss_client = smartsheet.Smartsheet(SM_TOKEN)
-    ss_client.errors_as_exceptions(True)
 
-    # Get columns from the sheet to map names to IDs
+    # Fetch sheet to get column IDs dynamically
     sheet = ss_client.Sheets.get_sheet(SHEET_ID)
-    col_map = {col.title: col.id for col in sheet.columns}
+    column_map = {col.title: col.id for col in sheet.columns}
 
-    # Prepare rows
-    new_rows = []
+    # -----------------------
+    # 4. Prepare rows for Smartsheet
+    # -----------------------
+    rows = []
     for _, row in df.iterrows():
-        cells = []
-        for col_name in df.columns:
-            if col_name in col_map:
-                cells.append({
-                    "column_id": col_map[col_name],
-                    "value": row[col_name]
-                })
-        if cells:
-            new_rows.append({
-                "to_top": True,
-                "cells": cells
-            })
+        sm_row = ss_client.models.Row()
+        sm_row.to_top = True
+        sm_row.cells = [
+            ss_client.models.Cell(column_id=column_map[col], value=row[col])
+            for col in df.columns if col in column_map
+        ]
+        rows.append(sm_row)
 
-    # Send rows in batches of 200
+    # -----------------------
+    # 5. Push rows in batches
+    # -----------------------
     batch_size = 200
-    for i in range(0, len(new_rows), batch_size):
-        batch = new_rows[i:i+batch_size]
+    for i in range(0, len(rows), batch_size):
+        batch = rows[i:i + batch_size]
         response = ss_client.Sheets.add_rows(SHEET_ID, batch)
         print(f"Pushed rows {i+1} to {i+len(batch)}")
 
-    print("Data successfully pushed to Smartsheet!")
+    print("✅ Data successfully pushed to Smartsheet!")
 
 if __name__ == "__main__":
     subs()
