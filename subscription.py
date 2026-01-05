@@ -35,8 +35,9 @@ def subs():
     resp.raise_for_status()
     result=resp.json()
     data = pd.json_normalize(result)
-    data.to_csv("outputs/subscription.csv",index=False)
+    data.to_csv("assets/subscription.csv",index=False)
 
 subs()
+
 
 
