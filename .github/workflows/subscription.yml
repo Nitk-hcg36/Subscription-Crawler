@@ -1,0 +1,32 @@
+name: Smartsheet Subscription Extract
+
+on:
+  workflow_dispatch:   # manual for now
+
+jobs:
+  extract-subscription:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests pandas urllib3
+
+      - name: Run subscription extractor
+        env:
+          SMARTSHEET_COOKIE: ${{ secrets.SMARTSHEET_COOKIE }}
+          SMARTSHEET_XSRF_TOKEN: ${{ secrets.SMARTSHEET_XSRF_TOKEN }}
+        run: python subscription.py
+
+      - name: Upload output CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: subscription-data
+          path: outputs/subscription.csv
