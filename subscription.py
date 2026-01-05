@@ -40,11 +40,12 @@ def subs():
     OUTPUT_DIR = os.path.join(BASE_DIR, "assets")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    OUTPUT_FILE = os.path.join(OUTPUT_DIR, "subscription.csv")
+    OUTPUT_FILE = os.path.join(OUTPUT_DIR, "Subscription.csv")
     data.to_csv(OUTPUT_FILE, index=False)
 
     print(f"Saved to {OUTPUT_FILE}")
 subs()
+
 
 
 
